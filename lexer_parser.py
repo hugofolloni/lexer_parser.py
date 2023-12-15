@@ -161,11 +161,12 @@ class Programa:
         self.comando = comando
 
 class Parser:
-  def __init__(self, tokens):
+  def __init__(self, tokens, calculadora):
     self.tok = tokens[0]
     self.tokens = tokens
     self.pos_prox_token = 0
-    self.atribuicoes = []
+    self.calculadora = calculadora
+    self.atribuicoes = calculadora.atribuicoes
 
   def syntax_error(self, message):
       raise SyntaxError(message)
@@ -212,7 +213,7 @@ class Parser:
         return self.syntax_error(f"O parseCmd não esperava a tag {self.tok.tag}")
     
   def CmdPrint(self, exp):
-    return print(self.calcula(exp))
+    return print(self.calculadora.calcula(exp))
    
   def parseE(self):
     exp = self.parseTermo()
@@ -272,6 +273,11 @@ class Parser:
         else:
             return self.syntax_error(f'O parseAtribui não esperava a tag {self.tok.tag}')
     
+class Calculadora:
+  def __init__(self):
+    self.tag = "calculadora"
+    self.atribuicoes = []
+  
   def calcula(self, exp):
     if exp.tag == "exp_num":
         return exp.n
@@ -307,7 +313,7 @@ class Resolve:
     def __init__(self):
         tokens = []
         lexer = Lexer(sys.argv[1])
-        lexer.print_tokens()
+        # lexer.print_tokens()
 
         for item in lexer.lista:
             tokens.append(Token(item[0], item[1], item[2], item[3]))
@@ -316,7 +322,8 @@ class Resolve:
         tokens.sort(key=lambda x: (x.linha, x.coluna))
         tokens.append(Token(np.inf, np.inf, "$", ''))
 
-        parser = Parser(tokens)
+        calculadora = Calculadora()
+        parser = Parser(tokens, calculadora)
         parser.monta()
 
 Resolve()
