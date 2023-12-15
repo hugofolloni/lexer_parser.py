@@ -1,0 +1,11 @@
+y = 25 - 5 * (10 - 2); 
+x = 2 - 1; 
+x = 2  + 3; 
+print(4 + x);
+
+# Cálculo do determinante de Bhaskara
+a = 5; b = 20; c = 15;
+print(b*b - 4*a*c);
+# E uma conta com os outros operadores
+d = a + b + c;
+print(-1/d);
