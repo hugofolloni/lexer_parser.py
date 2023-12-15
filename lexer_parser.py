@@ -140,20 +140,27 @@ class ExpBin:
         self.elDir = elDir
 
 class CmdPrint:
-    def __init__(self, exp):
+    def __init__(self, exp, linha, coluna):
         self.tag = "PRINT"
         self.exp = exp
+        self.linha = linha
+        self.coluna = coluna
 
 class CmdAtribui:
-    def __init__(self, nome, exp):
+    def __init__(self, nome, exp, linha, coluna):
       self.tag = "atribui"
       self.nome = nome
       self.exp = exp
+      self.linha = linha
+      self.coluna = coluna
+    
 
 class ExpNome:
-    def __init__(self, token):
+    def __init__(self, token, linha, coluna):
         self.tag = "NOME"
         self.token = token
+        self.linha = linha
+        self.coluna = coluna
 
 class Programa:
     def __init__(self, comando):
@@ -167,6 +174,7 @@ class Parser:
     self.pos_prox_token = 0
     self.calculadora = calculadora
     self.atribuicoes = calculadora.atribuicoes
+    self.prints = calculadora.prints
 
   def syntax_error(self, message):
       raise SyntaxError(message)
@@ -184,7 +192,9 @@ class Parser:
           elif tipo == 'n':
               return ExpNum(int(valor))
           elif tipo == 'v':
-              return ExpNome(valor)
+              linha = self.tok.linha
+              coluna = self.tok.coluna
+              return ExpNome(valor, linha, coluna)
           return valor
       else:
           return self.syntax_error(f"A tag {tag} não era a esperada")
@@ -193,24 +203,41 @@ class Parser:
     if self.tok.tag in ['NONE','print']:
         return self.parseCmd()
     elif self.tok.tag == '$':
+        for p in self.prints:
+            print(Calculadora.calcula(self.calculadora, p.exp))
         return
     else:
         return self.parseE()
 
   def parseCmd(self):
-    if self.tok.tag == "atribui":
-        x = self.come("atribui")
-        self.come("=")
-        exp = self.parseExp()
-        return CmdAtribui
-    elif self.tok.tag == "print":
-        self.come("print")
-        self.come("(")
-        exp = self.parseE()
-        self.come(")")
-        return self.CmdPrint(exp)
-    else:
-        return self.syntax_error(f"O parseCmd não esperava a tag {self.tok.tag}")
+    # if self.tok.tag == "atribui":
+    #     x = self.come("atribui")
+    #     self.come("=")
+    #     exp = self.parseExp()
+    #     return CmdAtribui
+    # if self.tok.tag == "print":
+    #     self.come("print")
+    #     self.come("(")
+    #     exp = self.parseE()
+    #     self.come(")")
+    #     return self.CmdPrint(exp)
+    # else:
+    #     return self.syntax_error(f"O parseCmd não esperava a tag {self.tok.tag}")
+    while True:
+        if self.tok.tag == "print":
+            self.come("print")
+            self.come("(")
+            linha = self.tok.linha
+            coluna = self.tok.coluna
+            exp = self.parseE()
+            self.come(")")
+            pr = CmdPrint(exp, linha, coluna)
+        elif self.tok.tag == ";":
+            self.come(";")
+            self.prints.append(pr)
+            return self.monta()
+        else:
+            return self.syntax_error(f"O parseCmd não esperava a tag {self.tok.tag}")
     
   def CmdPrint(self, exp):
     return print(self.calculadora.calcula(exp))
@@ -264,8 +291,10 @@ class Parser:
     while True:
         if self.tok.tag == '=':
             self.come('=')
+            linha = self.tok.linha
+            coluna = self.tok.coluna
             e = self.parseE()
-            at = CmdAtribui(t, e)
+            at = CmdAtribui(t, e, linha, coluna)
         elif self.tok.tag == ';':
             self.come(';')
             self.atribuicoes.append(at)
@@ -277,6 +306,7 @@ class Calculadora:
   def __init__(self):
     self.tag = "calculadora"
     self.atribuicoes = []
+    self.prints = []
   
   def calcula(self, exp):
     if exp.tag == "exp_num":
@@ -286,7 +316,7 @@ class Calculadora:
             return -self.calcula(exp.exp)
     elif exp.tag == "NOME":
         for i in range(len(self.atribuicoes) - 1, -1, -1):
-            if self.atribuicoes[i].nome.token == exp.token:
+            if (self.atribuicoes[i].nome.token == exp.token) and ((self.atribuicoes[i].linha < exp.linha) or (self.atribuicoes[i].linha == exp.linha and self.atribuicoes[i].coluna < exp.coluna)):
                 return self.calcula(self.atribuicoes[i].exp)
     elif exp.tag == "exp_bin":
         if exp.op == "+":
