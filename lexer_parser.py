@@ -328,9 +328,11 @@ class Calculadora:
         elif exp.op == "/":
             return self.calcula(exp.elEsq) / self.calcula(exp.elDir)
         else:
-            return self.syntax_error(f"Erro no cálculo, a operação {exp.op} é inválida")
+            raise SyntaxError(f"Erro no cálculo, a operação {exp.op} é inválida")
+    elif exp.tag == 'exp_parenteses':
+        return self.calcula(exp.exp)
     else:
-        return self.syntax_error(f"Erro no cálculo, a tag {exp.tag} é inválida")
+        raise SyntaxError(f"Erro no cálculo, a tag {exp.tag} é inválida")
 
 class Token:
   def __init__(self, linha, coluna, tag, valor):
